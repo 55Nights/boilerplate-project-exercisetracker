@@ -93,7 +93,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 /** ******************* */
-app.get('/api/users/:_id/logs', async (req, res) => {
+app.get("/api/users/:_id/logs", async (req, res) => {
   const userId = req.params._id;
   const { from, to, limit } = req.query;
 
@@ -101,48 +101,45 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     // Check if the user exists
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // Retrieve the user's exercise log and apply filters if provided
-    let log = user.log.map(exercise => ({
+    // Retrieve the user's exercise log
+    let log = user.log.map((exercise) => ({
       description: exercise.description,
       duration: exercise.duration,
       date: exercise.date.toDateString(),
     }));
 
-    if (from) {
+    // Filter log entries based on 'from' and 'to' dates if provided
+    if (from && to) {
       const fromDate = new Date(from);
-      log = log.filter(exercise => {
-        const exerciseDate = new Date(exercise.date);
-        return exerciseDate >= fromDate;
-      });
-    }
-
-    if (to) {
       const toDate = new Date(to);
-      log = log.filter(exercise => {
+      log = log.filter((exercise) => {
         const exerciseDate = new Date(exercise.date);
-        return exerciseDate <= toDate;
+        return exerciseDate >= fromDate && exerciseDate <= toDate;
       });
     }
 
+    // Apply 'limit' to the log entries
     if (limit) {
-      log = log.slice(0, limit);
+      const limitValue = parseInt(limit);
+      log = log.slice(0, limitValue);
     }
 
-    // Return the user object with the exercise log, count, and filtered log
+    // Return the user object with the filtered exercise log and count
     res.json({
       username: user.username,
       _id: user._id,
       log,
-      count: user.count, // Use the virtual 'count' property
+      count: log.length, // Count based on the filtered log
     });
   } catch (err) {
-    console.error('Error retrieving exercise log:', err);
-    res.status(500).json({ error: 'Error retrieving exercise log' });
+    console.error("Error retrieving exercise log:", err);
+    res.status(500).json({ error: "Error retrieving exercise log" });
   }
 });
+
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
