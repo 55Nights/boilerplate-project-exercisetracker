@@ -95,7 +95,32 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 /** ******************* */
 app.get("/api/users/:_id/logs", async (req, res) => {
   const userId = req.params._id;
-  const { from, to, limit } = req.query;
+  const from = req.query.from;
+  const to = req.query.to;
+  const limit = req.query.limit;
+
+  // Helper function to validate if a string is a valid date in "yyyy-mm-dd" format
+  const isValidDate = (dateString) => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    return dateRegex.test(dateString);
+  };
+
+  // Helper function to validate if a string is a positive integer
+  const isValidLimit = (limitString) => {
+    return /^\d+$/.test(limitString) && parseInt(limitString) > 0;
+  };
+
+  // Validate 'from' and 'to' dates
+  if ((from && !isValidDate(from)) || (to && !isValidDate(to))) {
+    return res
+      .status(400)
+      .json({ error: "Invalid date format for from or to" });
+  }
+
+  // Validate 'limit' as a positive integer
+  if (limit && !isValidLimit(limit)) {
+    return res.status(400).json({ error: "Invalid limit value" });
+  }
 
   try {
     // Check if the user exists
